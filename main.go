@@ -1,46 +1,31 @@
 package main
 
 import (
-	"github.com/veandco/go-sdl2/sdl"
+	"github.com/fabrizioperria/chip8/lib/display"
+	"github.com/fabrizioperria/chip8/lib/display/sdl"
 )
 
 func main() {
-	if err := sdl.Init(sdl.INIT_EVERYTHING); err != nil {
+	var currentDisplay display.Display = sdl.New()
+	if err := currentDisplay.Init(); err != nil {
 		panic(err)
 	}
+	defer currentDisplay.Destroy()
 
-	defer sdl.Quit()
+	currentDisplay.Clear()
+	currentDisplay.DrawRect(0, 0, 200, 200, 255, 0, 255, 255)
 
-	window, err := sdl.CreateWindow("test", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, 800, 600, sdl.WINDOW_SHOWN)
-	if err != nil {
-		panic(err)
-	}
-	defer window.Destroy()
-
-	surface, err := window.GetSurface()
-	if err != nil {
-		panic(err)
-	}
-	surface.FillRect(nil, 0)
-
-	var x int32 = 0
-	var y int32 = 0
-
-	rect := sdl.Rect{X: x, Y: y, W: 200, H: 200}
-	colour := sdl.Color{R: 255, G: 0, B: 255, A: 255} // purple
-	pixel := sdl.MapRGBA(surface.Format, colour.R, colour.G, colour.B, colour.A)
-	surface.FillRect(&rect, pixel)
-	window.UpdateSurface()
+	currentDisplay.Update()
 
 	running := true
 
 	for running {
-		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+		for event := currentDisplay.PollEvent(); event != nil; event = currentDisplay.PollEvent() {
 			switch event.(type) {
-			case *sdl.QuitEvent:
+			case *display.QuitEvent:
 				running = false
 			}
 		}
-		sdl.Delay(33)
+		currentDisplay.Delay(33)
 	}
 }
