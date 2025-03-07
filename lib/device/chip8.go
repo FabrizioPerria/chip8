@@ -47,3 +47,62 @@ type Chip8 struct {
 
 	beep func()
 }
+
+func (c *Chip8) Init() {
+	c.pc = memoryStart
+	c.shouldDraw = true
+	c.beep = func() {}
+
+	for i := range c.memory {
+		c.memory[i] = 0
+	}
+
+	for i := range c.stack {
+		c.stack[i] = 0
+	}
+
+	for i := range c.V {
+		c.V[i] = 0
+	}
+
+	for i := range c.key {
+		c.key[i] = 0
+	}
+
+	for i := range c.display {
+		for j := range c.display[i] {
+			c.display[i][j] = 0
+		}
+	}
+
+	copy(c.memory[memoryFontset:], fontset[:])
+}
+
+func (c *Chip8) Load(program []byte) {
+	copy(c.memory[memoryStart:], program)
+	c.pc = memoryStart
+}
+
+func (c *Chip8) ShouldDraw() bool {
+	tmp := c.shouldDraw
+	c.shouldDraw = false
+	return tmp
+}
+
+func (c *Chip8) GetBuffer() [displayWidth][displayHeight]byte {
+	return c.display
+}
+
+func (c *Chip8) SetKey(key uint8, state bool) {
+	if state {
+		c.key[key] = 1
+	} else {
+		c.key[key] = 0
+	}
+}
+
+func (c *Chip8) SetBeep(beep func()) {
+	c.beep = beep
+}
+
+func (c *Chip8) Step() {}
