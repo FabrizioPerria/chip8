@@ -1,6 +1,8 @@
 package sdl
 
 import (
+	"math"
+
 	"github.com/fabrizioperria/chip8/lib/display"
 	"github.com/veandco/go-sdl2/sdl"
 )
@@ -8,6 +10,8 @@ import (
 type SDLDisplay struct {
 	window  *sdl.Window
 	surface *sdl.Surface
+	xScale  float32
+	yScale  float32
 }
 
 func New() display.Display {
@@ -72,4 +76,31 @@ func (d *SDLDisplay) PollEvent() display.Event {
 
 func (d *SDLDisplay) Delay(ms uint32) {
 	sdl.Delay(ms)
+}
+
+func (d *SDLDisplay) DrawPixel(x, y int, on bool) {
+	// Scale the coordinates
+	scaledX := int(float32(x) * d.xScale)
+	scaledY := int(float32(y) * d.yScale)
+
+	// Scale the width and height of the pixel
+	pixelWidth := int(d.xScale)
+	pixelHeight := int(d.yScale)
+
+	if on {
+		d.DrawRect(scaledX, scaledY, pixelWidth, pixelHeight, 255, 255, 255, 255)
+	} else {
+		d.DrawRect(scaledX, scaledY, pixelWidth, pixelHeight, 0, 0, 0, 255)
+	}
+}
+
+func (d *SDLDisplay) SetScale(x, y float32) {
+	if math.Abs(float64(x)) < 0.0001 {
+		x = 0.0001
+	}
+	if math.Abs(float64(y)) < 0.0001 {
+		y = 0.0001
+	}
+	d.xScale = x
+	d.yScale = y
 }

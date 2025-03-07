@@ -10,8 +10,14 @@ type Display interface {
 	// Clear clears the display.
 	Clear()
 
+	// SetScale sets the scale of the display.
+	SetScale(x, y float32)
+
 	// DrawRect draws a rectangle on the display.
 	DrawRect(x, y, w, h int, r, g, b, a uint8)
+
+	// DrawPixel draws a pixel on the display. A pixel is a rectangle that follow the scale set by SetScale.
+	DrawPixel(x, y int, on bool)
 
 	// Update updates the display.
 	Update()
