@@ -54,6 +54,7 @@ func main() {
 
 	var currentDevice device.Chip8
 	currentDevice.Init()
+	currentDevice.LoadFile("roms/1-chip8-logo.ch8")
 
 	currentDisplay.Clear()
 	currentDisplay.SetScale(device.DisplayWidth, device.DisplayHeight)

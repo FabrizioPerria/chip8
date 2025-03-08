@@ -1,6 +1,9 @@
 package device
 
-import "time"
+import (
+	"os"
+	"time"
+)
 
 // TODO: define fontset
 var fontset = []uint8{
@@ -99,7 +102,15 @@ func (c *Chip8) Init() {
 	c.clock.timerDelay = time.Second / timerFrequency
 }
 
-func (c *Chip8) Load(program []byte) {
+func (c *Chip8) LoadFile(filename string) {
+	program, err := os.ReadFile(filename)
+	if err != nil {
+		panic(err)
+	}
+	c.LoadBytes(program)
+}
+
+func (c *Chip8) LoadBytes(program []byte) {
 	copy(c.memory[memoryStart:], program)
 	c.pc = memoryStart
 }
@@ -129,6 +140,7 @@ func (c *Chip8) SetBeep(beep func()) {
 func (c *Chip8) Step() {
 	now := time.Now()
 	if now.Sub(c.clock.lastCycle) >= c.clock.cycleDelay {
+		c.fetch()
 		c.display[c.currentPixel.x][c.currentPixel.y] = 0
 		c.currentPixel.x += 1
 		if c.currentPixel.x == 64 {
@@ -142,10 +154,10 @@ func (c *Chip8) Step() {
 		c.shouldDraw = true
 		c.clock.lastCycle = now
 	}
-	c.updateTimers(now)
+	c.updateTimers(&now)
 }
 
-func (c *Chip8) updateTimers(now time.Time) {
+func (c *Chip8) updateTimers(now *time.Time) {
 	if now.Sub(c.clock.lastTimerTick) >= c.clock.timerDelay {
 		if c.delayTimer > 0 {
 			c.delayTimer--
@@ -153,6 +165,22 @@ func (c *Chip8) updateTimers(now time.Time) {
 		if c.soundTimer > 0 {
 			c.soundTimer--
 		}
-		c.clock.lastTimerTick = now
+		c.clock.lastTimerTick = *now
+	}
+}
+
+func (c *Chip8) fetch() {
+	c.oc = uint16(c.memory[c.pc])<<8 | uint16(c.memory[c.pc+1])
+	c.pc += 2
+}
+
+func (c *Chip8) decode() {
+	opcode_type := (c.oc & 0xF000) >> 12
+	// x := (c.oc & 0x0F00) >> 8
+	// y := (c.oc & 0x00F0) >> 4
+	// n := c.oc & 0x000F
+	// nn := c.oc & 0x00FF
+	// nnn := c.oc & 0x0FFF
+	switch opcode_type {
 	}
 }
