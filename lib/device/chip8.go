@@ -46,6 +46,12 @@ type Chip8 struct {
 	shouldDraw bool
 
 	beep func()
+
+	currentPixel struct {
+		x     uint8
+		y     uint8
+		delay uint8
+	}
 }
 
 func (c *Chip8) Init() {
@@ -89,8 +95,8 @@ func (c *Chip8) ShouldDraw() bool {
 	return tmp
 }
 
-func (c *Chip8) GetBuffer() [DisplayWidth][DisplayHeight]byte {
-	return c.display
+func (c *Chip8) GetBuffer() *[DisplayWidth][DisplayHeight]byte {
+	return &c.display
 }
 
 func (c *Chip8) SetKey(key uint8, state bool) {
@@ -105,4 +111,21 @@ func (c *Chip8) SetBeep(beep func()) {
 	c.beep = beep
 }
 
-func (c *Chip8) Step() {}
+func (c *Chip8) Step() {
+	if c.currentPixel.delay > 0 {
+		c.currentPixel.delay -= 1
+	} else {
+		c.display[c.currentPixel.x][c.currentPixel.y] = 0
+		c.currentPixel.x += 1
+		if c.currentPixel.x == 64 {
+			c.currentPixel.x = 0
+			c.currentPixel.y += 1
+			if c.currentPixel.y == 32 {
+				c.currentPixel.y = 0
+			}
+		}
+		c.currentPixel.delay = 0
+		c.display[c.currentPixel.x][c.currentPixel.y] = 1
+		c.shouldDraw = true
+	}
+}

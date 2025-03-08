@@ -1,8 +1,6 @@
 package sdl
 
 import (
-	"fmt"
-
 	"github.com/fabrizioperria/chip8/lib/display"
 	"github.com/veandco/go-sdl2/sdl"
 )
@@ -96,9 +94,7 @@ func (d *SDLDisplay) DrawPixel(x, y int, on bool) {
 
 	// Scale the width and height of the pixel
 	pixelWidth := int(d.xScale)
-	fmt.Println("pixelWidth", pixelWidth)
 	pixelHeight := int(d.yScale)
-	fmt.Println("pixelHeight", pixelHeight)
 
 	if on {
 		d.DrawRect(scaledX, scaledY, pixelWidth, pixelHeight, 255, 255, 255, 255)
@@ -116,6 +112,4 @@ func (d *SDLDisplay) SetScale(x, y uint) {
 	}
 	d.xScale = float32(d.width) / float32(x)
 	d.yScale = float32(d.height) / float32(y)
-	fmt.Println("d.xScale", d.xScale)
-	fmt.Println("d.yScale", d.yScale)
 }

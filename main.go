@@ -6,6 +6,10 @@ import (
 	"github.com/fabrizioperria/chip8/lib/display/sdl"
 )
 
+const (
+	refreshRate = 60
+)
+
 func main() {
 	currentDisplay := sdl.New()
 	if err := currentDisplay.Init("CHIP-8", 800, 600); err != nil {
@@ -18,24 +22,20 @@ func main() {
 
 	currentDisplay.Clear()
 	currentDisplay.SetScale(device.DisplayWidth, device.DisplayHeight)
-	currentDisplay.DrawPixel(0, 0, true)
-	currentDisplay.DrawPixel(31, 15, true)
-	currentDisplay.DrawPixel(63, 31, true)
-
-	currentDisplay.Update()
 
 	running := true
 
 	for running {
-		// currentDevice.Step()
-		// if currentDevice.ShouldDraw() {
-		// 	buffer := currentDevice.GetBuffer()
-		// 	for x := 0; x < display.DisplayWidth; x++ {
-		// 		for y := 0; y < display.DisplayHeight; y++ {
-		// 			currentDisplay.DrawPixel(x, y, buffer[x][y] == 1)
-		// 		}
-		// 	}
-		// }
+		currentDevice.Step()
+		if currentDevice.ShouldDraw() {
+			buffer := currentDevice.GetBuffer()
+			for x := range 64 {
+				for y := range 32 {
+					currentDisplay.DrawPixel(x, y, buffer[x][y] == 1)
+				}
+			}
+			currentDisplay.Update()
+		}
 
 		for event := currentDisplay.PollEvent(); event != nil; event = currentDisplay.PollEvent() {
 			switch event.(type) {
@@ -43,6 +43,6 @@ func main() {
 				running = false
 			}
 		}
-		currentDisplay.Delay(33)
+		currentDisplay.Delay(1000 / refreshRate)
 	}
 }
