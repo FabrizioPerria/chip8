@@ -188,12 +188,18 @@ func (c *Chip8) decode() {
 			// 0nnn - SYS addr
 			c.pc = nnn
 		}
+
 	case 0x1:
 		// 1nnn - JP addr
 		c.pc = nnn
+
 	case 0x6:
 		// 6xkk - LD Vx, byte
 		c.V[x] = byte(nn)
+
+	case 0x7:
+		// 7xkk - ADD Vx, byte
+		c.V[x] += byte(nn)
 
 	case 0xA:
 		// Annn - LD I, addr
