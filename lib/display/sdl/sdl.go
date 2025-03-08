@@ -1,7 +1,7 @@
 package sdl
 
 import (
-	"math"
+	"fmt"
 
 	"github.com/fabrizioperria/chip8/lib/display"
 	"github.com/veandco/go-sdl2/sdl"
@@ -12,18 +12,29 @@ type SDLDisplay struct {
 	surface *sdl.Surface
 	xScale  float32
 	yScale  float32
+	width   int
+	height  int
 }
 
 func New() display.Display {
 	return &SDLDisplay{}
 }
 
-func (d *SDLDisplay) Init() error {
+func (d *SDLDisplay) Init(title string, width int32, height int32) error {
+	if width == 0 {
+		width = 640
+	}
+	if height == 0 {
+		height = 320
+	}
+	d.width = int(width)
+	d.height = int(height)
+
 	if err := sdl.Init(sdl.INIT_EVERYTHING); err != nil {
 		return err
 	}
 
-	window, err := sdl.CreateWindow("Chip8", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, 800, 600, sdl.WINDOW_SHOWN)
+	window, err := sdl.CreateWindow(title, sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, width, height, sdl.WINDOW_SHOWN)
 	if err != nil {
 		return err
 	}
@@ -85,7 +96,9 @@ func (d *SDLDisplay) DrawPixel(x, y int, on bool) {
 
 	// Scale the width and height of the pixel
 	pixelWidth := int(d.xScale)
+	fmt.Println("pixelWidth", pixelWidth)
 	pixelHeight := int(d.yScale)
+	fmt.Println("pixelHeight", pixelHeight)
 
 	if on {
 		d.DrawRect(scaledX, scaledY, pixelWidth, pixelHeight, 255, 255, 255, 255)
@@ -94,13 +107,15 @@ func (d *SDLDisplay) DrawPixel(x, y int, on bool) {
 	}
 }
 
-func (d *SDLDisplay) SetScale(x, y float32) {
-	if math.Abs(float64(x)) < 0.0001 {
-		x = 0.0001
+func (d *SDLDisplay) SetScale(x, y uint) {
+	if x == 0 {
+		x = 1
 	}
-	if math.Abs(float64(y)) < 0.0001 {
-		y = 0.0001
+	if y == 0 {
+		y = 1
 	}
-	d.xScale = x
-	d.yScale = y
+	d.xScale = float32(d.width) / float32(x)
+	d.yScale = float32(d.height) / float32(y)
+	fmt.Println("d.xScale", d.xScale)
+	fmt.Println("d.yScale", d.yScale)
 }

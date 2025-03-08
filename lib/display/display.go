@@ -2,7 +2,7 @@ package display
 
 type Display interface {
 	// Init initialises the display.
-	Init() error
+	Init(title string, width int32, height int32) error
 
 	// Destroy cleans up the display.
 	Destroy()
@@ -11,7 +11,7 @@ type Display interface {
 	Clear()
 
 	// SetScale sets the scale of the display.
-	SetScale(x, y float32)
+	SetScale(x, y uint)
 
 	// DrawRect draws a rectangle on the display.
 	DrawRect(x, y, w, h int, r, g, b, a uint8)

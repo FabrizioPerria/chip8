@@ -24,8 +24,8 @@ const (
 	memorySize    = 4096
 	memoryFontset = 0x50
 	memoryStart   = 0x200
-	displayWidth  = 64
-	displayHeight = 32
+	DisplayWidth  = 64
+	DisplayHeight = 32
 )
 
 type Chip8 struct {
@@ -42,7 +42,7 @@ type Chip8 struct {
 	delayTimer uint8
 	soundTimer uint8
 
-	display    [displayWidth][displayHeight]byte
+	display    [DisplayWidth][DisplayHeight]byte
 	shouldDraw bool
 
 	beep func()
@@ -89,7 +89,7 @@ func (c *Chip8) ShouldDraw() bool {
 	return tmp
 }
 
-func (c *Chip8) GetBuffer() [displayWidth][displayHeight]byte {
+func (c *Chip8) GetBuffer() [DisplayWidth][DisplayHeight]byte {
 	return c.display
 }
 

@@ -8,7 +8,7 @@ import (
 
 func main() {
 	currentDisplay := sdl.New()
-	if err := currentDisplay.Init(); err != nil {
+	if err := currentDisplay.Init("CHIP-8", 800, 600); err != nil {
 		panic(err)
 	}
 	defer currentDisplay.Destroy()
@@ -17,10 +17,10 @@ func main() {
 	currentDevice.Init()
 
 	currentDisplay.Clear()
-	currentDisplay.SetScale(800/64, 600/32)
+	currentDisplay.SetScale(device.DisplayWidth, device.DisplayHeight)
 	currentDisplay.DrawPixel(0, 0, true)
-	currentDisplay.DrawPixel(32, 16, true)
-	currentDisplay.DrawPixel(64, 32, true)
+	currentDisplay.DrawPixel(31, 15, true)
+	currentDisplay.DrawPixel(63, 31, true)
 
 	currentDisplay.Update()
 
