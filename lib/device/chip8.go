@@ -80,7 +80,7 @@ func (c *Chip8) Init() {
 
 	c.clearDisplay()
 
-	copy(c.memory[memoryFontset:], fontset[:])
+	copy(c.memory[:], fontset[:])
 
 	c.clock.lastCycle = time.Now()
 	c.clock.lastTimerTick = time.Now()
@@ -133,17 +133,7 @@ func (c *Chip8) Step() {
 	if now.Sub(c.clock.lastCycle) >= c.clock.cycleDelay {
 		c.fetch()
 		c.decode()
-		// c.display[c.currentPixel.x][c.currentPixel.y] = 0
-		// c.currentPixel.x += 1
-		// if c.currentPixel.x == 64 {
-		// 	c.currentPixel.x = 0
-		// 	c.currentPixel.y += 1
-		// 	if c.currentPixel.y == 32 {
-		// 		c.currentPixel.y = 0
-		// 	}
-		// }
-		// c.display[c.currentPixel.x][c.currentPixel.y] = 1
-		// c.shouldDraw = true
+
 		c.clock.lastCycle = now
 	}
 	c.updateTimers(&now)
@@ -161,7 +151,6 @@ func (c *Chip8) updateTimers(now *time.Time) {
 	}
 }
 
-// 0000 0000 1110 0000
 func (c *Chip8) fetch() {
 	c.oc = uint16(c.memory[c.pc])<<8 | uint16(c.memory[c.pc+1])
 	c.pc += 2
@@ -174,7 +163,9 @@ func (c *Chip8) decode() {
 	n := c.oc & 0x000F
 	nn := c.oc & 0x00FF
 	nnn := c.oc & 0x0FFF
-	fmt.Println(hex2str(c.oc))
+	if c.oc != 0x1450 {
+		fmt.Println(hex2str(c.oc))
+	}
 	switch opcode_type {
 	case 0x0:
 		switch nn {
@@ -251,7 +242,7 @@ func (c *Chip8) decode() {
 		case 0x5:
 			// 8xy5 - SUB Vx, Vy
 			c.V[0xF] = 0
-			if c.V[x] > c.V[y] {
+			if c.V[x] >= c.V[y] {
 				c.V[0xF] = 1
 			}
 			c.V[x] -= c.V[y]
@@ -262,7 +253,7 @@ func (c *Chip8) decode() {
 		case 0x7:
 			// 8xy7 - SUBN Vx, Vy
 			c.V[0xF] = 0
-			if c.V[y] > c.V[x] {
+			if c.V[y] >= c.V[x] {
 				c.V[0xF] = 1
 			}
 			c.V[x] = c.V[y] - c.V[x]
@@ -273,7 +264,6 @@ func (c *Chip8) decode() {
 
 		default:
 			panic("Unknown opcode - " + hex2str(opcode_type))
-
 		}
 
 	case 0x9:

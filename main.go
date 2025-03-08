@@ -54,9 +54,16 @@ func main() {
 
 	var currentDevice device.Chip8
 	currentDevice.Init()
-	// currentDevice.LoadFile("roms/1-chip8-logo.ch8")
-	// currentDevice.LoadFile("roms/2-ibm-logo.ch8")
-	currentDevice.LoadFile("roms/bc_test.ch8")
+	// currentDevice.LoadFile("./roms/test/1-chip8-logo.ch8")
+	// currentDevice.LoadFile("./roms/test/2-ibm-logo.ch8")
+	// currentDevice.LoadFile("./roms/test/3-corax+.ch8")
+	currentDevice.LoadFile("./roms/test/4-flags.ch8")
+	// currentDevice.LoadFile("./roms/test/5-quirks.ch8")
+	// currentDevice.LoadFile("./roms/test/6-keypad.ch8")
+	// currentDevice.LoadFile("./roms/test/7-beep.ch8")
+	// currentDevice.LoadFile("./roms/test/8-scrolling.ch8")
+	// currentDevice.LoadFile("./roms/test/bc_test.ch8")
+	// currentDevice.LoadFile("./roms/test/SCTEST")
 
 	currentDisplay.Clear()
 	currentDisplay.SetScale(device.DisplayWidth, device.DisplayHeight)
