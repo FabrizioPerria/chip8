@@ -55,7 +55,8 @@ func main() {
 	var currentDevice device.Chip8
 	currentDevice.Init()
 	// currentDevice.LoadFile("roms/1-chip8-logo.ch8")
-	currentDevice.LoadFile("roms/2-ibm-logo.ch8")
+	// currentDevice.LoadFile("roms/2-ibm-logo.ch8")
+	currentDevice.LoadFile("roms/bc_test.ch8")
 
 	currentDisplay.Clear()
 	currentDisplay.SetScale(device.DisplayWidth, device.DisplayHeight)

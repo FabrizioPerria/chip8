@@ -2,6 +2,7 @@ package device
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"time"
 )
@@ -193,6 +194,30 @@ func (c *Chip8) decode() {
 		// 1nnn - JP addr
 		c.pc = nnn
 
+	case 0x2:
+		// 2nnn - CALL addr
+		c.sp++
+		c.stack[c.sp] = c.pc
+		c.pc = nnn
+
+	case 0x3:
+		// 3xkk - SE Vx, byte
+		if c.V[x] == byte(nn) {
+			c.pc += 2
+		}
+
+	case 0x4:
+		// 4xkk - SNE Vx, byte
+		if c.V[x] != byte(nn) {
+			c.pc += 2
+		}
+
+	case 0x5:
+		// 5xy0 - SE Vx, Vy
+		if c.V[x] == c.V[y] {
+			c.pc += 2
+		}
+
 	case 0x6:
 		// 6xkk - LD Vx, byte
 		c.V[x] = byte(nn)
@@ -201,9 +226,73 @@ func (c *Chip8) decode() {
 		// 7xkk - ADD Vx, byte
 		c.V[x] += byte(nn)
 
+	case 0x8:
+		switch n {
+		case 0x0:
+			// 8xy0 - LD Vx, Vy
+			c.V[x] = c.V[y]
+		case 0x1:
+			// 8xy1 - OR Vx, Vy
+			c.V[x] |= c.V[y]
+		case 0x2:
+			// 8xy2 - AND Vx, Vy
+			c.V[x] &= c.V[y]
+		case 0x3:
+			// 8xy3 - XOR Vx, Vy
+			c.V[x] ^= c.V[y]
+		case 0x4:
+			// 8xy4 - ADD Vx, Vy
+			sum := uint16(c.V[x]) + uint16(c.V[y])
+			c.V[0xF] = 0
+			if sum > 0xFF {
+				c.V[0xF] = 1
+			}
+			c.V[x] = byte(sum)
+		case 0x5:
+			// 8xy5 - SUB Vx, Vy
+			c.V[0xF] = 0
+			if c.V[x] > c.V[y] {
+				c.V[0xF] = 1
+			}
+			c.V[x] -= c.V[y]
+		case 0x6:
+			// 8xy6 - SHR Vx {, Vy}
+			c.V[0xF] = c.V[x] & 0x1
+			c.V[x] >>= 1
+		case 0x7:
+			// 8xy7 - SUBN Vx, Vy
+			c.V[0xF] = 0
+			if c.V[y] > c.V[x] {
+				c.V[0xF] = 1
+			}
+			c.V[x] = c.V[y] - c.V[x]
+		case 0xE:
+			// 8xyE - SHL Vx {, Vy}
+			c.V[0xF] = c.V[x] >> 7
+			c.V[x] <<= 1
+
+		default:
+			panic("Unknown opcode - " + hex2str(opcode_type))
+
+		}
+
+	case 0x9:
+		// 9xy0 - SNE Vx, Vy
+		if c.V[x] != c.V[y] {
+			c.pc += 2
+		}
+
 	case 0xA:
 		// Annn - LD I, addr
 		c.I = nnn
+
+	case 0xB:
+		// Bnnn - JP V0, addr
+		c.pc = nnn + uint16(c.V[0])
+
+	case 0xC:
+		// Cxkk - RND Vx, byte
+		c.V[x] = byte(nn) & byte(rand.Intn(256))
 
 	case 0xD:
 		// Dxyn - DRW Vx, Vy, nibble
@@ -212,9 +301,71 @@ func (c *Chip8) decode() {
 		y := int(c.V[y])
 		c.drawSprite(x, y, sprite)
 
-	default:
-		panic("Unknown opcode - " + hex2str(opcode_type))
+	case 0xE:
+		switch nn {
+		case 0x9E:
+			// Ex9E - SKP Vx
+			if c.key[c.V[x]] == 1 {
+				c.pc += 2
+			}
+		case 0xA1:
+			// ExA1 - SKNP Vx
+			if c.key[c.V[x]] == 0 {
+				c.pc += 2
+			}
+		default:
+			panic("Unknown opcode - " + hex2str(c.oc))
+		}
+
+	case 0xF:
+		switch nn {
+		case 0x07:
+			// Fx07 - LD Vx, DT
+			c.V[x] = c.delayTimer
+		case 0x0A:
+			// Fx0A - LD Vx, K
+			c.V[x] = c.getKeyPress()
+		case 0x15:
+			// Fx15 - LD DT, Vx
+			c.delayTimer = c.V[x]
+		case 0x18:
+			// Fx18 - LD ST, Vx
+			c.soundTimer = c.V[x]
+		case 0x1E:
+			// Fx1E - ADD I, Vx
+			c.I += uint16(c.V[x])
+		case 0x29:
+			// Fx29 - LD F, Vx
+			c.I = uint16(c.V[x]) * 5
+		case 0x33:
+			// Fx33 - LD B, Vx
+			c.memory[c.I] = c.V[x] / 100
+			c.memory[c.I+1] = (c.V[x] / 10) % 10
+			c.memory[c.I+2] = c.V[x] % 10
+		case 0x55:
+			// Fx55 - LD [I], Vx
+			copy(c.memory[c.I:], c.V[:x+1])
+		case 0x65:
+			// Fx65 - LD Vx, [I]
+			copy(c.V[:x+1], c.memory[c.I:])
+		}
 	}
+}
+
+func (c *Chip8) getKeyPress() byte {
+	for {
+		for i := range len(c.key) {
+			if c.key[i] == 1 {
+				return byte(i)
+			}
+		}
+
+		time.Sleep(10 * time.Millisecond)
+	}
+}
+
+func (c *Chip8) SetKeyPress(key uint8) {
+	c.key[key] = 1
 }
 
 func (c *Chip8) drawSprite(x, y int, sprite []byte) {
