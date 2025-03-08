@@ -19,12 +19,16 @@ type Display interface {
 	// DrawPixel draws a pixel on the display. A pixel is a rectangle that follow the scale set by SetScale.
 	DrawPixel(x, y int, on bool)
 
+	// DrawBuffer draws a buffer on the display.
+	DrawBuffer(buffer *[64][32]byte)
+
 	// Update updates the display.
 	Update()
 
 	// PollEvent polls for an event.
 	PollEvent() Event
 
-	// Delay delays for a number of milliseconds.
-	Delay(ms uint32)
+	// // Delay delays for a number of milliseconds.
+	// Delay(ms uint32)
+	ShouldQuit() bool
 }

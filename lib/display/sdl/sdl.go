@@ -103,6 +103,15 @@ func (d *SDLDisplay) DrawPixel(x, y int, on bool) {
 	}
 }
 
+func (d *SDLDisplay) DrawBuffer(buffer *[64][32]byte) {
+	for i := range 64 * 32 {
+		x := i % 64
+		y := i / 64
+		d.DrawPixel(x, y, (*buffer)[x][y] == 1)
+	}
+	d.Update()
+}
+
 func (d *SDLDisplay) SetScale(x, y uint) {
 	if x == 0 {
 		x = 1
@@ -112,4 +121,13 @@ func (d *SDLDisplay) SetScale(x, y uint) {
 	}
 	d.xScale = float32(d.width) / float32(x)
 	d.yScale = float32(d.height) / float32(y)
+}
+
+func (d *SDLDisplay) ShouldQuit() bool {
+	for event := d.PollEvent(); event != nil; event = d.PollEvent() {
+		if _, ok := event.(*display.QuitEvent); ok {
+			return true
+		}
+	}
+	return false
 }

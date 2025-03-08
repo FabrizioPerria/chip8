@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/fabrizioperria/chip8/lib/device"
-	"github.com/fabrizioperria/chip8/lib/display"
 	"github.com/fabrizioperria/chip8/lib/display/sdl"
 )
 
@@ -23,26 +22,11 @@ func main() {
 	currentDisplay.Clear()
 	currentDisplay.SetScale(device.DisplayWidth, device.DisplayHeight)
 
-	running := true
-
-	for running {
+	for !currentDisplay.ShouldQuit() {
 		currentDevice.Step()
 		if currentDevice.ShouldDraw() {
 			buffer := currentDevice.GetBuffer()
-			for x := range 64 {
-				for y := range 32 {
-					currentDisplay.DrawPixel(x, y, buffer[x][y] == 1)
-				}
-			}
-			currentDisplay.Update()
+			currentDisplay.DrawBuffer(buffer)
 		}
-
-		for event := currentDisplay.PollEvent(); event != nil; event = currentDisplay.PollEvent() {
-			switch event.(type) {
-			case *display.QuitEvent:
-				running = false
-			}
-		}
-		currentDisplay.Delay(1000 / refreshRate)
 	}
 }

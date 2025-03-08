@@ -1,5 +1,7 @@
 package device
 
+import "time"
+
 // TODO: define fontset
 var fontset = []uint8{
 	0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -21,11 +23,13 @@ var fontset = []uint8{
 }
 
 const (
-	memorySize    = 4096
-	memoryFontset = 0x50
-	memoryStart   = 0x200
-	DisplayWidth  = 64
-	DisplayHeight = 32
+	memorySize     = 4096
+	memoryFontset  = 0x50
+	memoryStart    = 0x200
+	DisplayWidth   = 64
+	DisplayHeight  = 32
+	cycleFrequency = 500 // commands are executed at 500Hz
+	timerFrequency = 60  // timers are updated at 60Hz
 )
 
 type Chip8 struct {
@@ -42,15 +46,21 @@ type Chip8 struct {
 	delayTimer uint8
 	soundTimer uint8
 
+	clock struct {
+		lastCycle     time.Time
+		lastTimerTick time.Time
+		cycleDelay    time.Duration
+		timerDelay    time.Duration
+	}
+
 	display    [DisplayWidth][DisplayHeight]byte
 	shouldDraw bool
 
 	beep func()
 
 	currentPixel struct {
-		x     uint8
-		y     uint8
-		delay uint8
+		x uint8
+		y uint8
 	}
 }
 
@@ -82,6 +92,11 @@ func (c *Chip8) Init() {
 	}
 
 	copy(c.memory[memoryFontset:], fontset[:])
+
+	c.clock.lastCycle = time.Now()
+	c.clock.lastTimerTick = time.Now()
+	c.clock.cycleDelay = time.Second / cycleFrequency
+	c.clock.timerDelay = time.Second / timerFrequency
 }
 
 func (c *Chip8) Load(program []byte) {
@@ -112,9 +127,8 @@ func (c *Chip8) SetBeep(beep func()) {
 }
 
 func (c *Chip8) Step() {
-	if c.currentPixel.delay > 0 {
-		c.currentPixel.delay -= 1
-	} else {
+	now := time.Now()
+	if now.Sub(c.clock.lastCycle) >= c.clock.cycleDelay {
 		c.display[c.currentPixel.x][c.currentPixel.y] = 0
 		c.currentPixel.x += 1
 		if c.currentPixel.x == 64 {
@@ -124,8 +138,21 @@ func (c *Chip8) Step() {
 				c.currentPixel.y = 0
 			}
 		}
-		c.currentPixel.delay = 0
 		c.display[c.currentPixel.x][c.currentPixel.y] = 1
 		c.shouldDraw = true
+		c.clock.lastCycle = now
+	}
+	c.updateTimers(now)
+}
+
+func (c *Chip8) updateTimers(now time.Time) {
+	if now.Sub(c.clock.lastTimerTick) >= c.clock.timerDelay {
+		if c.delayTimer > 0 {
+			c.delayTimer--
+		}
+		if c.soundTimer > 0 {
+			c.soundTimer--
+		}
+		c.clock.lastTimerTick = now
 	}
 }
