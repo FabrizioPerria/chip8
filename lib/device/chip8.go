@@ -63,6 +63,12 @@ type Chip8 struct {
 	needsKey   bool
 
 	beep func()
+
+	quirks struct {
+		clipping                bool
+		resetVOn0x8xy1And0x8xy2 bool
+		nopOnFullStack          bool
+	}
 }
 
 func (c *Chip8) Init() {
@@ -82,6 +88,9 @@ func (c *Chip8) Init() {
 	c.clock.lastTimerTick = time.Now()
 	c.clock.cycleDelay = time.Second / cycleFrequency
 	c.clock.timerDelay = time.Second / timerFrequency
+	c.quirks.clipping = true
+	c.quirks.resetVOn0x8xy1And0x8xy2 = true
+	c.quirks.nopOnFullStack = true
 }
 
 func (c *Chip8) clearDisplay() {
@@ -181,7 +190,7 @@ func (c *Chip8) decode() {
 
 	case 0x2:
 		// 2nnn - CALL addr
-		if c.sp+1 < uint16(len(c.stack)) {
+		if !c.quirks.nopOnFullStack || c.sp < 15 {
 			c.sp++
 			c.stack[c.sp] = c.pc
 			c.pc = nnn
@@ -221,14 +230,21 @@ func (c *Chip8) decode() {
 		case 0x1:
 			// 8xy1 - OR Vx, Vy
 			c.V[x] |= c.V[y]
-			c.V[0xF] = 0
+			if c.quirks.resetVOn0x8xy1And0x8xy2 {
+				c.V[0xF] = 0
+			}
 		case 0x2:
 			// 8xy2 - AND Vx, Vy
 			c.V[x] &= c.V[y]
-			c.V[0xF] = 0
+			if c.quirks.resetVOn0x8xy1And0x8xy2 {
+				c.V[0xF] = 0
+			}
 		case 0x3:
 			// 8xy3 - XOR Vx, Vy
 			c.V[x] ^= c.V[y]
+			if c.quirks.resetVOn0x8xy1And0x8xy2 {
+				c.V[0xF] = 0
+			}
 		case 0x4:
 			// 8xy4 - ADD Vx, Vy
 			sum := uint16(c.V[x]) + uint16(c.V[y])
@@ -349,9 +365,11 @@ func (c *Chip8) decode() {
 		case 0x55:
 			// Fx55 - LD [I], Vx
 			copy(c.memory[c.I:], c.V[:x+1])
+			c.I += uint16(x) + 1
 		case 0x65:
 			// Fx65 - LD Vx, [I]
 			copy(c.V[:x+1], c.memory[c.I:])
+			c.I += uint16(x) + 1
 		}
 	}
 }
@@ -360,14 +378,42 @@ func (c *Chip8) NeedsKey() bool {
 	return c.needsKey
 }
 
+func getCoordinate(pos int, max int, shouldClip bool) int {
+	if shouldClip {
+		if pos < 0 || pos >= max {
+			return -1
+		}
+		return pos
+	}
+	return warpCoordinate(pos, max)
+}
+
+func isCompletelyOffscreen(x, y int) bool {
+	return x >= DisplayWidth || y >= DisplayHeight || x+8 <= 0 || y+8 <= 0
+}
+
+func warpCoordinate(pos int, max int) int {
+	return (pos%max + max) % max
+}
+
 func (c *Chip8) drawSprite(x, y int, sprite []byte) {
 	c.V[0xF] = 0
+	if c.quirks.clipping {
+		if isCompletelyOffscreen(x, y) {
+			x = warpCoordinate(x, DisplayWidth)
+			y = warpCoordinate(y, DisplayHeight)
+		}
+	}
 	for j := range sprite {
 		for i := range 8 {
 			spritePixel := (sprite[j] & (0x80 >> uint(i)))
 			if spritePixel != 0 {
-				xCoord := (x + i) % DisplayWidth
-				yCoord := (y + j) % DisplayHeight
+				xCoord := getCoordinate(x+i, DisplayWidth, c.quirks.clipping)
+				yCoord := getCoordinate(y+j, DisplayHeight, c.quirks.clipping)
+				if xCoord == -1 || yCoord == -1 {
+					continue
+				}
+
 				if c.display[xCoord][yCoord] == 1 {
 					c.V[0xF] = 1
 				}
