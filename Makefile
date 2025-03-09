@@ -5,7 +5,7 @@ run:
 	go run .
 
 runprof:
-	go run -cpuprofile=cpu.prof -memprofile=mem.prof .
+	go run . -cpuprofile=cpu.prof -memprofile=mem.prof
 
 showcpuprof:
 	go tool pprof -http=:8080 cpu.prof

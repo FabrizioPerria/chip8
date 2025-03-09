@@ -70,9 +70,14 @@ type Chip8 struct {
 		nopOnFullStack            bool
 		shiftingVxOn0x8xy6And8xyE bool
 		jumpingToVx               bool
+		incrementOnLoad           bool
 	}
 
 	debug bool
+}
+
+func (c *Chip8) Frametime() time.Duration {
+	return c.clock.cycleDelay
 }
 
 func (c *Chip8) Init() {
@@ -86,18 +91,19 @@ func (c *Chip8) Init() {
 
 	c.clearDisplay()
 
-	copy(c.memory[:], fontset[:])
+	copy(c.memory[memoryFontset:], fontset[:])
 
 	c.clock.lastCycle = time.Now()
 	c.clock.lastTimerTick = time.Now()
 	c.clock.cycleDelay = time.Second / cycleFrequency
 	c.clock.timerDelay = time.Second / timerFrequency
 
-	c.quirks.clipping = true
-	c.quirks.resetVOn0x8xy1And0x8xy2 = true
-	c.quirks.nopOnFullStack = true
-	c.quirks.shiftingVxOn0x8xy6And8xyE = false
+	c.quirks.clipping = false
+	c.quirks.resetVOn0x8xy1And0x8xy2 = false
+	c.quirks.nopOnFullStack = false
+	c.quirks.shiftingVxOn0x8xy6And8xyE = true
 	c.quirks.jumpingToVx = false
+	c.quirks.incrementOnLoad = true
 
 	c.debug = false
 }
@@ -163,7 +169,12 @@ func (c *Chip8) updateTimers(now *time.Time) {
 
 func (c *Chip8) fetch() {
 	if !c.needsKey {
+		tmp := c.oc
 		c.oc = uint16(c.memory[c.pc])<<8 | uint16(c.memory[c.pc+1])
+		if tmp != c.oc {
+			fmt.Println("opcode: ", hex2str(c.oc))
+		}
+
 		c.pc += 2
 	}
 }
@@ -175,16 +186,7 @@ func (c *Chip8) decode() {
 	n := c.oc & 0x000F
 	nn := c.oc & 0x00FF
 	nnn := c.oc & 0x0FFF
-	if c.oc != 0x1450 {
-		fmt.Println("Opcode: " + hex2str(c.oc))
-		fmt.Println("\tI: " + hex2str(c.I))
-		fmt.Println("\tV: ", c.V)
-		fmt.Println("\tStack: ", c.stack)
-		fmt.Println("\tPC: " + hex2str(c.pc))
-		fmt.Println("\tSP: " + hex2str(c.sp))
-		fmt.Println("\tKey: ", c.key)
-		fmt.Println("\tDelay Timer: ", c.delayTimer)
-	}
+
 	switch opcode_type {
 	case 0x0:
 		switch nn {
@@ -196,9 +198,9 @@ func (c *Chip8) decode() {
 			c.pc = c.stack[c.sp]
 			c.sp--
 
-			// default:
-			// 	// 0nnn - SYS addr
-			// 	c.pc = nnn
+		default:
+			// 0nnn - SYS addr
+			c.pc = nnn
 		}
 
 	case 0x1:
@@ -233,6 +235,9 @@ func (c *Chip8) decode() {
 
 	case 0x6:
 		// 6xkk - LD Vx, byte
+		if c.oc == 0x6000 {
+			fmt.Println("opcode: ", hex2str(c.oc))
+		}
 		c.V[x] = byte(nn)
 
 	case 0x7:
@@ -388,7 +393,8 @@ func (c *Chip8) decode() {
 			c.I += uint16(c.V[x])
 		case 0x29:
 			// Fx29 - LD F, Vx
-			c.I = uint16(c.V[x]) * 5
+			// c.I = uint16(c.V[x]) * 5
+			c.I = memoryFontset + uint16(c.V[x])*5 // Each font character is 5 bytes
 		case 0x33:
 			// Fx33 - LD B, Vx
 			c.memory[c.I] = c.V[x] / 100
@@ -397,12 +403,20 @@ func (c *Chip8) decode() {
 		case 0x55:
 			// Fx55 - LD [I], Vx
 			copy(c.memory[c.I:], c.V[:x+1])
-			c.I += uint16(x) + 1
+			if c.quirks.incrementOnLoad {
+				c.I += uint16(x) + 1
+			}
 		case 0x65:
 			// Fx65 - LD Vx, [I]
 			copy(c.V[:x+1], c.memory[c.I:])
-			c.I += uint16(x) + 1
+			if c.quirks.incrementOnLoad {
+				c.I += uint16(x) + 1
+			}
+		default:
+			panic("Unknown opcode - " + hex2str(c.oc))
 		}
+	default:
+		panic("Unknown opcode - " + hex2str(c.oc))
 	}
 }
 

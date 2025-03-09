@@ -25,16 +25,17 @@ var KeyMap = map[sdl.Scancode]byte{
 }
 
 type Keypad struct {
-	key [16]byte
+	key           [16]byte
+	keyboardState []uint8
 }
 
 func (k *Keypad) UpdateKeys() *[16]byte {
-	keyboard := sdl.GetKeyboardState()
-
+	if k.keyboardState == nil {
+		k.keyboardState = sdl.GetKeyboardState()
+	}
 	k.reset()
-
 	for scancode, chip8key := range KeyMap {
-		if keyboard[scancode] == 1 {
+		if k.keyboardState[scancode] == 1 {
 			k.key[chip8key] = 1
 		}
 	}

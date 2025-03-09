@@ -10,6 +10,8 @@ import (
 	"github.com/fabrizioperria/chip8/lib/device"
 	"github.com/fabrizioperria/chip8/lib/display/sdl"
 	"github.com/fabrizioperria/chip8/lib/keypad"
+
+	_ "net/http/pprof"
 )
 
 var (
@@ -19,6 +21,7 @@ var (
 
 func main() {
 	flag.Parse()
+
 	if *cpuprofile != "" {
 		f, err := os.Create(*cpuprofile)
 		if err != nil {
@@ -57,17 +60,7 @@ func main() {
 	var currentKeypad keypad.Keypad
 
 	currentDevice.Init()
-	// currentDevice.LoadFile("./roms/test/1-chip8-logo.ch8")
-	// currentDevice.LoadFile("./roms/test/2-ibm-logo.ch8")
-	// currentDevice.LoadFile("./roms/test/3-corax+.ch8")
-	// currentDevice.LoadFile("./roms/test/4-flags.ch8")
-	// currentDevice.LoadFile("./roms/test/5-quirks.ch8")
-	// currentDevice.LoadFile("./roms/test/6-keypad.ch8")
-	// currentDevice.LoadFile("./roms/test/7-beep.ch8")
-	// currentDevice.LoadFile("./roms/test/8-scrolling.ch8")
-	// currentDevice.LoadFile("./roms/test/bc_test.ch8")
-	// currentDevice.LoadFile("./roms/test/SCTEST")
-	currentDevice.LoadFile("./roms/games/Breakout (Brix hack) [David Winter, 1997].ch8")
+	currentDevice.LoadFile("./roms/games/MAZE")
 
 	currentDisplay.Clear()
 	currentDisplay.SetScale(device.DisplayWidth, device.DisplayHeight)
