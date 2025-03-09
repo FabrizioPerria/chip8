@@ -65,10 +65,14 @@ type Chip8 struct {
 	beep func()
 
 	quirks struct {
-		clipping                bool
-		resetVOn0x8xy1And0x8xy2 bool
-		nopOnFullStack          bool
+		clipping                  bool
+		resetVOn0x8xy1And0x8xy2   bool
+		nopOnFullStack            bool
+		shiftingVxOn0x8xy6And8xyE bool
+		jumpingToVx               bool
 	}
+
+	debug bool
 }
 
 func (c *Chip8) Init() {
@@ -88,9 +92,14 @@ func (c *Chip8) Init() {
 	c.clock.lastTimerTick = time.Now()
 	c.clock.cycleDelay = time.Second / cycleFrequency
 	c.clock.timerDelay = time.Second / timerFrequency
+
 	c.quirks.clipping = true
 	c.quirks.resetVOn0x8xy1And0x8xy2 = true
 	c.quirks.nopOnFullStack = true
+	c.quirks.shiftingVxOn0x8xy6And8xyE = false
+	c.quirks.jumpingToVx = false
+
+	c.debug = false
 }
 
 func (c *Chip8) clearDisplay() {
@@ -166,8 +175,15 @@ func (c *Chip8) decode() {
 	n := c.oc & 0x000F
 	nn := c.oc & 0x00FF
 	nnn := c.oc & 0x0FFF
-	if c.oc != 0x1450 {
-		fmt.Println(hex2str(c.oc))
+	if c.oc != 0x1450 && c.debug {
+		fmt.Println("Opcode: " + hex2str(c.oc))
+		fmt.Println("\tI: " + hex2str(c.I))
+		fmt.Println("\tV: ", c.V)
+		fmt.Println("\tStack: ", c.stack)
+		fmt.Println("\tPC: " + hex2str(c.pc))
+		fmt.Println("\tSP: " + hex2str(c.sp))
+		fmt.Println("\tKey: ", c.key)
+		fmt.Println("\tDelay Timer: ", c.delayTimer)
 	}
 	switch opcode_type {
 	case 0x0:
@@ -263,7 +279,13 @@ func (c *Chip8) decode() {
 		case 0x6:
 			// 8xy6 - SHR Vx {, Vy}
 			c.V[0xF] = c.V[x] & 0x1
-			c.V[x] >>= 1
+			if c.quirks.shiftingVxOn0x8xy6And8xyE {
+				c.V[x] >>= 1
+			} else {
+				c.V[y] >>= 1
+				c.V[x] = c.V[y]
+			}
+
 		case 0x7:
 			// 8xy7 - SUBN Vx, Vy
 			c.V[0xF] = 0
@@ -274,7 +296,12 @@ func (c *Chip8) decode() {
 		case 0xE:
 			// 8xyE - SHL Vx {, Vy}
 			c.V[0xF] = c.V[x] >> 7
-			c.V[x] <<= 1
+			if c.quirks.shiftingVxOn0x8xy6And8xyE {
+				c.V[x] <<= 1
+			} else {
+				c.V[y] <<= 1
+				c.V[x] = c.V[y]
+			}
 
 		default:
 			panic("Unknown opcode - " + hex2str(opcode_type))
@@ -292,7 +319,11 @@ func (c *Chip8) decode() {
 
 	case 0xB:
 		// Bnnn - JP V0, addr
-		c.pc = nnn + uint16(c.V[0])
+		if c.quirks.jumpingToVx {
+			c.pc = nnn + uint16(c.V[x])
+		} else {
+			c.pc = nnn + uint16(c.V[0])
+		}
 
 	case 0xC:
 		// Cxkk - RND Vx, byte
