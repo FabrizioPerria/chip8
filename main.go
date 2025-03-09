@@ -62,11 +62,12 @@ func main() {
 	// currentDevice.LoadFile("./roms/test/3-corax+.ch8")
 	// currentDevice.LoadFile("./roms/test/4-flags.ch8")
 	// currentDevice.LoadFile("./roms/test/5-quirks.ch8")
-	currentDevice.LoadFile("./roms/test/6-keypad.ch8")
+	// currentDevice.LoadFile("./roms/test/6-keypad.ch8")
 	// currentDevice.LoadFile("./roms/test/7-beep.ch8")
 	// currentDevice.LoadFile("./roms/test/8-scrolling.ch8")
 	// currentDevice.LoadFile("./roms/test/bc_test.ch8")
 	// currentDevice.LoadFile("./roms/test/SCTEST")
+	currentDevice.LoadFile("./roms/games/BRIX")
 
 	currentDisplay.Clear()
 	currentDisplay.SetScale(device.DisplayWidth, device.DisplayHeight)
