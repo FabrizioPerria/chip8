@@ -41,12 +41,12 @@ type Chip8 struct {
 	memory [memorySize]byte
 	stack  [16]uint16
 
-	oc  uint16   // opcode
-	pc  uint16   // program counter
-	sp  uint16   // stack pointer
-	V   [16]byte // registers
-	I   uint16   // index register
-	key [16]byte // keypad
+	oc  uint16    // opcode
+	pc  uint16    // program counter
+	sp  uint16    // stack pointer
+	V   [16]byte  // registers
+	I   uint16    // index register
+	key *[16]byte // keypad
 
 	delayTimer uint8
 	soundTimer uint8
@@ -82,7 +82,7 @@ func (c *Chip8) Init() {
 	c.memory = [memorySize]byte{}
 	c.stack = [16]uint16{}
 	c.V = [16]byte{}
-	c.key = [16]byte{}
+	c.key = &[16]byte{}
 
 	c.clearDisplay()
 
@@ -131,7 +131,7 @@ func (c *Chip8) GetBuffer() *[DisplayWidth][DisplayHeight]byte {
 }
 
 func (c *Chip8) SetKeysStatus(keys *[16]byte) {
-	c.key = *keys
+	c.key = keys
 }
 
 func (c *Chip8) SetBeep(beep func()) {
@@ -175,7 +175,7 @@ func (c *Chip8) decode() {
 	n := c.oc & 0x000F
 	nn := c.oc & 0x00FF
 	nnn := c.oc & 0x0FFF
-	if c.oc != 0x1450 && c.debug {
+	if c.oc != 0x1450 {
 		fmt.Println("Opcode: " + hex2str(c.oc))
 		fmt.Println("\tI: " + hex2str(c.I))
 		fmt.Println("\tV: ", c.V)

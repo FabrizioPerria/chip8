@@ -67,7 +67,7 @@ func main() {
 	// currentDevice.LoadFile("./roms/test/8-scrolling.ch8")
 	// currentDevice.LoadFile("./roms/test/bc_test.ch8")
 	// currentDevice.LoadFile("./roms/test/SCTEST")
-	currentDevice.LoadFile("./roms/games/BRIX")
+	currentDevice.LoadFile("./roms/games/Breakout (Brix hack) [David Winter, 1997].ch8")
 
 	currentDisplay.Clear()
 	currentDisplay.SetScale(device.DisplayWidth, device.DisplayHeight)
