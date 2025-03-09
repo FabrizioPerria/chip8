@@ -60,13 +60,9 @@ type Chip8 struct {
 
 	display    [DisplayWidth][DisplayHeight]byte
 	shouldDraw bool
+	needsKey   bool
 
 	beep func()
-
-	currentPixel struct {
-		x uint8
-		y uint8
-	}
 }
 
 func (c *Chip8) Init() {
@@ -116,12 +112,8 @@ func (c *Chip8) GetBuffer() *[DisplayWidth][DisplayHeight]byte {
 	return &c.display
 }
 
-func (c *Chip8) SetKey(key uint8, state bool) {
-	if state {
-		c.key[key] = 1
-	} else {
-		c.key[key] = 0
-	}
+func (c *Chip8) SetKeysStatus(keys *[16]byte) {
+	c.key = *keys
 }
 
 func (c *Chip8) SetBeep(beep func()) {
@@ -152,8 +144,10 @@ func (c *Chip8) updateTimers(now *time.Time) {
 }
 
 func (c *Chip8) fetch() {
-	c.oc = uint16(c.memory[c.pc])<<8 | uint16(c.memory[c.pc+1])
-	c.pc += 2
+	if !c.needsKey {
+		c.oc = uint16(c.memory[c.pc])<<8 | uint16(c.memory[c.pc+1])
+		c.pc += 2
+	}
 }
 
 func (c *Chip8) decode() {
@@ -187,9 +181,11 @@ func (c *Chip8) decode() {
 
 	case 0x2:
 		// 2nnn - CALL addr
-		c.sp++
-		c.stack[c.sp] = c.pc
-		c.pc = nnn
+		if c.sp+1 < uint16(len(c.stack)) {
+			c.sp++
+			c.stack[c.sp] = c.pc
+			c.pc = nnn
+		}
 
 	case 0x3:
 		// 3xkk - SE Vx, byte
@@ -314,7 +310,23 @@ func (c *Chip8) decode() {
 			c.V[x] = c.delayTimer
 		case 0x0A:
 			// Fx0A - LD Vx, K
-			c.V[x] = c.getKeyPress()
+			if c.needsKey {
+				getPressedKey := func() byte {
+					for i := range c.key {
+						if c.key[i] == 1 {
+							return byte(i)
+						}
+					}
+					return 255
+				}
+				key := getPressedKey()
+				if key != 255 {
+					c.V[x] = key
+					c.needsKey = false
+				} else {
+					c.needsKey = true
+				}
+			}
 		case 0x15:
 			// Fx15 - LD DT, Vx
 			c.delayTimer = c.V[x]
@@ -342,20 +354,8 @@ func (c *Chip8) decode() {
 	}
 }
 
-func (c *Chip8) getKeyPress() byte {
-	for {
-		for i := range len(c.key) {
-			if c.key[i] == 1 {
-				return byte(i)
-			}
-		}
-
-		time.Sleep(10 * time.Millisecond)
-	}
-}
-
-func (c *Chip8) SetKeyPress(key uint8) {
-	c.key[key] = 1
+func (c *Chip8) NeedsKey() bool {
+	return c.needsKey
 }
 
 func (c *Chip8) drawSprite(x, y int, sprite []byte) {
