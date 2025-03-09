@@ -195,9 +195,10 @@ func (c *Chip8) decode() {
 			// 00EE - RET
 			c.pc = c.stack[c.sp]
 			c.sp--
-		default:
-			// 0nnn - SYS addr
-			c.pc = nnn
+
+			// default:
+			// 	// 0nnn - SYS addr
+			// 	c.pc = nnn
 		}
 
 	case 0x1:

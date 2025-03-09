@@ -61,8 +61,8 @@ func main() {
 	// currentDevice.LoadFile("./roms/test/2-ibm-logo.ch8")
 	// currentDevice.LoadFile("./roms/test/3-corax+.ch8")
 	// currentDevice.LoadFile("./roms/test/4-flags.ch8")
-	currentDevice.LoadFile("./roms/test/5-quirks.ch8")
-	// currentDevice.LoadFile("./roms/test/6-keypad.ch8")
+	// currentDevice.LoadFile("./roms/test/5-quirks.ch8")
+	currentDevice.LoadFile("./roms/test/6-keypad.ch8")
 	// currentDevice.LoadFile("./roms/test/7-beep.ch8")
 	// currentDevice.LoadFile("./roms/test/8-scrolling.ch8")
 	// currentDevice.LoadFile("./roms/test/bc_test.ch8")
@@ -81,8 +81,6 @@ func main() {
 			key := currentKeypad.GetPressedKey()
 			if key != 255 {
 				continue
-				// currentDevice.SetKey(key, true)
-				// currentDevice.HandleKey()
 			}
 		}
 		if currentDevice.ShouldDraw() {
