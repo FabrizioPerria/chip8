@@ -221,9 +221,11 @@ func (c *Chip8) decode() {
 		case 0x1:
 			// 8xy1 - OR Vx, Vy
 			c.V[x] |= c.V[y]
+			c.V[0xF] = 0
 		case 0x2:
 			// 8xy2 - AND Vx, Vy
 			c.V[x] &= c.V[y]
+			c.V[0xF] = 0
 		case 0x3:
 			// 8xy3 - XOR Vx, Vy
 			c.V[x] ^= c.V[y]
